@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Limpio y Perfumado — Pedidos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1d4ed8;
+      --primary-light: #dbeafe;
+      --accent: #0ea5e9;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --surface: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --muted: #64748b;
+    }
+    body { background: var(--surface); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; }
+
+    /* ── NAVBAR ── */
+    .navbar-brand span { font-weight: 800; letter-spacing: -.5px; }
+    .navbar { box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+
+    /* ── STEPS ── */
+    .steps-bar { background: #fff; border-bottom: 1px solid var(--border); padding: 12px 0; }
+    .step-item { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; cursor: pointer; }
+    .step-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .85rem; border: 2px solid var(--border); background: #fff; color: var(--muted); transition: all .25s; }
+    .step-label { font-size: .72rem; color: var(--muted); font-weight: 500; text-align: center; }
+    .step-item.active .step-circle { border-color: var(--primary); background: var(--primary); color: #fff; }
+    .step-item.active .step-label { color: var(--primary); font-weight: 700; }
+    .step-item.done .step-circle { border-color: var(--success); background: var(--success); color: #fff; }
+    .step-item.done .step-label { color: var(--success); }
+    .step-connector { flex: 1; height: 2px; background: var(--border); margin-top: -20px; max-width: 40px; }
+    .step-connector.done { background: var(--success); }
+
+    /* ── CARDS ── */
+    .section-card { background: var(--card); border-radius: 14px; border: 1px solid var(--border); padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+    .section-title { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .section-title i { color: var(--primary); }
+
+    /* ── PRODUCTO ── */
+    .prod-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .prod-row:last-child { border-bottom: none; }
+    .prod-info { flex: 1; min-width: 0; }
+    .prod-name { font-weight: 600; font-size: .9rem; line-height: 1.2; }
+    .prod-meta { font-size: .75rem; color: var(--muted); margin-top: 2px; }
+    .prod-price { font-weight: 700; color: var(--primary); font-size: .95rem; white-space: nowrap; }
+    .prod-badge { font-size: .65rem; padding: 2px 7px; border-radius: 20px; font-weight: 600; }
+    .badge-aconquija { background: #ede9fe; color: #6d28d9; }
+    .badge-isla { background: #dcfce7; color: #166534; }
+
+    /* ── STEPPER ── */
+    .qty-stepper { display: flex; align-items: center; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; flex-shrink: 0; }
+    .qty-btn { width: 32px; height: 32px; border: none; background: #f1f5f9; color: var(--text); font-size: 1.1rem; cursor: pointer; transition: background .15s; display: flex; align-items: center; justify-content: center; }
+    .qty-btn:hover { background: var(--primary-light); color: var(--primary); }
+    .qty-input { width: 36px; height: 32px; border: none; text-align: center; font-weight: 700; font-size: .9rem; background: #fff; outline: none; -moz-appearance: textfield; }
+    .qty-input::-webkit-outer-spin-button, .qty-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    /* ── RESUMEN ── */
+    .resumen-sticky { position: sticky; top: 70px; }
+    .resumen-item { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: .85rem; }
+    .resumen-item:last-child { border-bottom: none; }
+    .resumen-total { font-size: 1.2rem; font-weight: 800; color: var(--primary); }
+    .resumen-empty { text-align: center; color: var(--muted); font-size: .85rem; padding: 20px 0; }
+
+    /* ── ALERTA PLAZO ── */
+    .plazo-alert { border-radius: 10px; padding: 10px 14px; font-size: .82rem; display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; }
+    .plazo-alert.warn { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+    .plazo-alert.ok { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+
+    /* ── FECHA ── */
+    input[type="date"], input[type="time"], select, textarea, input[type="text"], input[type="tel"] {
+      border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; width: 100%;
+      font-size: .9rem; background: #fff; color: var(--text); outline: none; transition: border-color .2s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(29,78,216,.1); }
+    label { font-size: .82rem; font-weight: 600; color: var(--muted); margin-bottom: 4px; display: block; text-transform: uppercase; letter-spacing: .04em; }
+
+    /* ── BOTONES ── */
+    .btn-primary { background: var(--primary); border: none; border-radius: 10px; padding: 12px 24px; font-weight: 700; font-size: .95rem; color: #fff; }
+    .btn-whatsapp { background: #25d366; border: none; border-radius: 10px; padding: 14px 28px; font-weight: 700; font-size: 1rem; color: #fff; width: 100%; box-shadow: 0 4px 14px rgba(37,211,102,.3); }
+    .btn-whatsapp:hover { background: #1fba59; color: #fff; }
+    .btn-outline-secondary { border-radius: 10px; }
+
+    /* ── ADMIN VIEW ── */
+    #adminView { display: none; }
+    .order-card { border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; background: #fff; }
+    .order-card.urgente { border-left: 4px solid var(--danger); }
+    .order-card.proximo { border-left: 4px solid var(--warning); }
+    .order-card.ok { border-left: 4px solid var(--success); }
+    .stock-alert { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px; font-size: .82rem; color: var(--danger); margin-bottom: 8px; }
+
+    /* ── CONFIRMACIÓN ── */
+    #confirmView { display: none; }
+    .confirm-icon { font-size: 4rem; color: var(--success); }
+
+    /* ── CATEGORIA HEADER ── */
+    .cat-header { background: var(--primary-light); color: var(--primary); font-weight: 700; font-size: .78rem; padding: 6px 12px; border-radius: 8px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .05em; display: flex; align-items: center; gap: 6px; }
+
+    @media (max-width: 768px) {
+      .resumen-sticky { position: static; }
+      .prod-name { font-size: .83rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ CONFIG (editar número de WhatsApp) ══ -->
+<script>
+  const CONFIG = {
+    whatsapp: "5493874639259",   // WhatsApp Limpio y Perfumado
+    negocio: "Limpio y Perfumado",
+    ciudad: "Salta",
+    minDiasAconquija: 3,   // días mínimos para productos de Tucumán
+    minDiasIsla: 1         // días mínimos para productos locales
+  };
+</script>
+
+<!-- ══ NAVBAR ══ -->
+<nav class="navbar navbar-dark bg-primary sticky-top">
+  <div class="container-fluid">
+    <span class="navbar-brand"><i class="bi bi-droplet-fill me-2"></i><span>+limpio+perfumado</span></span>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-light btn-sm" onclick="toggleAdmin()"><i class="bi bi-lock me-1"></i>Admin</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ VISTA CLIENTE ══ -->
+<div id="clientView">
+
+  <!-- Steps bar -->
+  <div class="steps-bar">
+    <div class="container-fluid">
+      <div class="d-flex align-items-center justify-content-center" style="max-width:480px;margin:0 auto;">
+        <div class="step-item active" id="step-ind-1" onclick="goToStep(1)">
+          <div class="step-circle" id="step-circ-1">1</div>
+          <div class="step-label">Tus datos</div>
+        </div>
+        <div class="step-connector" id="conn-1"></div>
+        <div class="step-item" id="step-ind-2" onclick="goToStep(2)">
+          <div class="step-circle" id="step-circ-2">2</div>
+          <div class="step-label">Productos</div>
+        </div>
+        <div class="step-connector" id="conn-2"></div>
+        <div class="step-item" id="step-ind-3" onclick="goToStep(3)">
+          <div class="step-circle" id="step-circ-3">3</div>
+          <div class="step-label">Entrega</div>
+        </div>
+        <div class="step-connector" id="conn-3"></div>
+        <div class="step-item" id="step-ind-4" onclick="goToStep(4)">
+          <div class="step-circle" id="step-circ-4">4</div>
+          <div class="step-label">Resumen</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid py-3" style="max-width:960px;">
+    <div class="row g-3">
+
+      <!-- ─── COLUMNA PRINCIPAL ─── -->
+      <div class="col-lg-8">
+
+        <!-- STEP 1: Datos del cliente -->
+        <div id="stepContent1">
+          <div class="section-card">
+            <div class="section-title"><i class="bi bi-person-fill"></i> Tus datos de contacto</div>
+            <div class="row g-3">
+              <div class="col-12">
+                <label>Nombre o razón social *</label>
+                <input type="text" id="clienteNombre" placeholder="Ej: Centro de Salud N° 28">
+              </div>
+              <div class="col-sm-6">
+                <label>Teléfono / WhatsApp *</label>
+                <input type="tel" id="clienteTel" placeholder="387 XXX-XXXX">
+              </div>
+              <div class="col-sm-6">
+                <label>Tipo de cliente</label>
+                <select id="clienteTipo">
+                  <option value="">Seleccionar...</option>
+                  <option>Centro de Salud</option>
+                  <option>Transporte</option>
+                  <option>Gimnasio</option>
+                  <option>Comercio</option>
+                  <option>Empresa</option>
+                  <option>Particular</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label>Dirección de entrega *</label>
+                <input type="text" id="clienteDireccion" placeholder="Calle, número, barrio">
+              </div>
+              <div class="col-12">
+                <label>¿Cómo nos conociste?</label>
+                <select id="clienteOrigen">
+                  <option value="">Seleccionar...</option>
+                  <option>Cliente habitual</option>
+                  <option>Referido</option>
+                  <option>Redes sociales</option>
+                  <option>Otro</option>
+                </select>
+              </div>
+            </div>
+            <div class="d-flex justify-content-end mt-4">
+              <button class="btn btn-primary" onclick="nextStep(1)">Siguiente — Elegir productos <i class="bi bi-arrow-right ms-1"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: Productos -->
+        <div id="stepContent2" style="display:none;">
+          <div id="productList"></div>
+          <div class="d-flex justify-content-between mt-2">
+            <button class="btn btn-outline-secondary" onclick="goToStep(1)"><i class="bi bi-arrow-left me-1"></i> Atrás</button>
+            <button class="btn btn-primary" onclick="nextStep(2)">Siguiente — Fecha de entrega <i class="bi bi-arrow-right ms-1"></i></button>
+          </div>
+        </div>
+
+        <!-- STEP 3: Entrega -->
+        <div id="stepContent3" style="display:none;">
+          <div class="section-card">
+            <div class="section-title"><i class="bi bi-calendar-check"></i> Fecha y horario de entrega</div>
+
+            <div id="plazoInfo" class="plazo-alert ok mb-3" style="display:none;"></div>
+
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <label>Fecha deseada *</label>
+                <input type="date" id="fechaEntrega" onchange="checkFecha()">
+                <div id="fechaAlert" class="mt-1" style="font-size:.78rem;"></div>
+              </div>
+              <div class="col-sm-6">
+                <label>Horario preferido</label>
+                <select id="horarioEntrega">
+                  <option value="mañana">Mañana (8:00 – 12:00)</option>
+                  <option value="tarde">Tarde (12:00 – 17:00)</option>
+                  <option value="noche">Tarde-noche (17:00 – 22:00)</option>
+                  <option value="cualquiera" selected>Cualquier horario</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label>Frecuencia de pedido</label>
+                <select id="frecuencia">
+                  <option value="">Seleccionar...</option>
+                  <option>Semanal</option>
+                  <option>Quincenal</option>
+                  <option>Mensual</option>
+                  <option>Según necesidad</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label>Notas adicionales</label>
+                <textarea id="notas" rows="3" placeholder="Instrucciones de entrega, acceso al edificio, contacto en destino..."></textarea>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-4">
+              <button class="btn btn-outline-secondary" onclick="goToStep(2)"><i class="bi bi-arrow-left me-1"></i> Atrás</button>
+              <button class="btn btn-primary" onclick="nextStep(3)">Ver resumen del pedido <i class="bi bi-arrow-right ms-1"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 4: Resumen final -->
+        <div id="stepContent4" style="display:none;">
+          <div class="section-card">
+            <div class="section-title"><i class="bi bi-receipt"></i> Resumen del pedido</div>
+            <div id="resumenFinal"></div>
+
+            <div class="mt-4 p-3" style="background:#f0fdf4;border-radius:10px;border:1px solid #86efac;">
+              <div class="d-flex gap-2 align-items-start">
+                <i class="bi bi-info-circle-fill text-success mt-1"></i>
+                <div style="font-size:.83rem;color:#166534;">
+                  Al enviar el pedido, nos llegará por WhatsApp y nos pondremos en contacto para confirmar disponibilidad y coordinar la entrega. <strong>No se realiza ningún pago online.</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <button class="btn btn-whatsapp" onclick="enviarPedido()">
+                <i class="bi bi-whatsapp me-2"></i> Enviar pedido por WhatsApp
+              </button>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button class="btn btn-outline-secondary btn-sm" onclick="goToStep(3)"><i class="bi bi-arrow-left me-1"></i> Modificar</button>
+              <button class="btn btn-outline-primary btn-sm" onclick="window.print()"><i class="bi bi-printer me-1"></i> Imprimir</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ─── SIDEBAR RESUMEN ─── -->
+      <div class="col-lg-4">
+        <div class="resumen-sticky">
+          <div class="section-card">
+            <div class="section-title"><i class="bi bi-cart3"></i> Tu pedido</div>
+            <div id="sidebarResumen">
+              <div class="resumen-empty"><i class="bi bi-box text-muted d-block mb-2" style="font-size:2rem;"></i>Todavía no agregaste productos</div>
+            </div>
+            <div id="sidebarTotal" style="display:none;">
+              <hr>
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">TOTAL ESTIMADO</span>
+                <span class="resumen-total" id="sidebarTotalMonto">$0</span>
+              </div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">Los precios pueden variar según condiciones de pago.</div>
+            </div>
+          </div>
+
+          <!-- Info de plazos -->
+          <div class="section-card">
+            <div class="section-title"><i class="bi bi-truck"></i> Plazos de entrega</div>
+            <div style="font-size:.8rem;color:var(--muted);">
+              <div class="d-flex align-items-start gap-2 mb-2">
+                <i class="bi bi-lightning-fill text-warning mt-1"></i>
+                <span>Productos con stock: <strong>1-2 días hábiles</strong></span>
+              </div>
+              <div class="d-flex align-items-start gap-2">
+                <i class="bi bi-clock text-primary mt-1"></i>
+                <span>Productos especiales: <strong>3-4 días hábiles</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══ VISTA CONFIRMACIÓN ══ -->
+<div id="confirmView" class="container-fluid py-5 text-center" style="max-width:480px;">
+  <div class="section-card">
+    <div class="confirm-icon"><i class="bi bi-check-circle-fill"></i></div>
+    <h3 class="fw-bold mt-3">¡Pedido enviado!</h3>
+    <p class="text-muted">Tu pedido fue enviado por WhatsApp. Nos pondremos en contacto para confirmar disponibilidad y coordinar la entrega.</p>
+    <p class="fw-semibold">Número de pedido: <span id="numeroPedido" class="text-primary"></span></p>
+    <button class="btn btn-primary mt-2" onclick="nuevoPedido()">Hacer otro pedido</button>
+  </div>
+</div>
+
+<!-- ══ VISTA ADMIN ══ -->
+<div id="adminView" class="container-fluid py-3" style="max-width:960px;">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0"><i class="bi bi-speedometer2 me-2 text-primary"></i>Panel de pedidos recibidos</h5>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-danger btn-sm" onclick="limpiarPedidos()"><i class="bi bi-trash me-1"></i>Limpiar</button>
+      <button class="btn btn-outline-secondary btn-sm" onclick="toggleAdmin()"><i class="bi bi-x me-1"></i>Cerrar</button>
+    </div>
+  </div>
+
+  <!-- Métricas rápidas -->
+  <div class="row g-3 mb-3" id="adminMetrics"></div>
+
+  <!-- Stock necesario -->
+  <div class="section-card" id="stockNecesario" style="display:none;">
+    <div class="section-title"><i class="bi bi-boxes"></i> Stock requerido para pedidos pendientes</div>
+    <div id="stockNecesarioContent"></div>
+  </div>
+
+  <!-- Lista de pedidos -->
+  <div class="section-title mt-2"><i class="bi bi-list-ul"></i> Pedidos por fecha de entrega</div>
+  <div id="adminPedidosList">
+    <div class="text-center text-muted py-4"><i class="bi bi-inbox d-block mb-2" style="font-size:2rem;"></i>No hay pedidos registrados todavía.</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ════════════════════════════════════════════
+//  DATOS DE PRODUCTOS
+// ════════════════════════════════════════════
+const PRODUCTOS = [
+  // PAPEL - Aconquija
+  { id:1,  cat:"PAPEL",       nombre:"Caja Toallas Intercaladas Blancas", precio:18000, proveedor:"ACONQUIJA", unidad:"caja" },
+  { id:2,  cat:"PAPEL",       nombre:"Caja Toallas Intercaladas Beige",   precio:16500, proveedor:"ACONQUIJA", unidad:"caja" },
+  { id:3,  cat:"PAPEL",       nombre:"Papel Higiénico 300M x 8U",         precio:14500, proveedor:"ACONQUIJA", unidad:"pack" },
+  { id:4,  cat:"PAPEL",       nombre:"Toalla Rollo 4x200M Blanca Cal A",  precio:16500, proveedor:"ACONQUIJA", unidad:"unidad" },
+  { id:9,  cat:"PAPEL",       nombre:"Toalla Rollo 4x200M Blanca Cal B",  precio:16500, proveedor:"ACONQUIJA", unidad:"unidad" },
+  { id:11, cat:"PAPEL",       nombre:"Rollo Servilletas 4x200M Blanca",   precio:16000, proveedor:"ACONQUIJA", unidad:"unidad" },
+  { id:5,  cat:"PAPEL",       nombre:"Bolsón Papel Higiénico 50m x 24U",  precio:15500, proveedor:"LA ISLA",   unidad:"bolsón" },
+  // BOLSAS - La Isla
+  { id:6,  cat:"BOLSAS",      nombre:"Bolsa Residuo 45x60x30 (x30 u)",    precio:1500,  proveedor:"LA ISLA",   unidad:"pack" },
+  { id:7,  cat:"BOLSAS",      nombre:"Bolsa Compact. 60x90 (x10 u)",      precio:2000,  proveedor:"LA ISLA",   unidad:"pack" },
+  { id:8,  cat:"BOLSAS",      nombre:"Bolsa Compact. 90x110 (x10 u)",     precio:2500,  proveedor:"LA ISLA",   unidad:"pack" },
+  // ACCESORIOS - La Isla
+  { id:12, cat:"ACCESORIOS",  nombre:"Rejillas Doble",                     precio:1500,  proveedor:"LA ISLA",   unidad:"unidad" },
+  { id:13, cat:"ACCESORIOS",  nombre:"Rejillas Banderita",                 precio:3500,  proveedor:"LA ISLA",   unidad:"unidad" },
+  { id:14, cat:"ACCESORIOS",  nombre:"Paño Multiuso Costero",              precio:1500,  proveedor:"LA ISLA",   unidad:"unidad" },
+  { id:15, cat:"ACCESORIOS",  nombre:"Trapo Fibran",                       precio:1400,  proveedor:"LA ISLA",   unidad:"unidad" },
+  { id:17, cat:"ACCESORIOS",  nombre:"Escobillón Gondomax",                precio:6000,  proveedor:"LA ISLA",   unidad:"unidad" },
+  { id:18, cat:"ACCESORIOS",  nombre:"Secador Negro x 40cm",               precio:5500,  proveedor:"LA ISLA",   unidad:"unidad" },
+  { id:19, cat:"ACCESORIOS",  nombre:"Secador Negro x 50cm",               precio:6500,  proveedor:"LA ISLA",   unidad:"unidad" },
+  { id:20, cat:"ACCESORIOS",  nombre:"Guantes Make",                       precio:4500,  proveedor:"LA ISLA",   unidad:"par" },
+  { id:21, cat:"ACCESORIOS",  nombre:"Esponja",                            precio:1500,  proveedor:"LA ISLA",   unidad:"unidad" },
+  // LÍQUIDOS - La Isla
+  { id:22, cat:"LÍQUIDOS",    nombre:"Limpiavidrios Concent. ECO (x5 L)", precio:3000,  proveedor:"LA ISLA",   unidad:"bidón" },
+  { id:23, cat:"LÍQUIDOS",    nombre:"Lavandina Concent. Multimax (x5 L)",precio:2000,  proveedor:"LA ISLA",   unidad:"bidón" },
+  { id:24, cat:"LÍQUIDOS",    nombre:"Desinfectante Piso Concent. (x5 L)",precio:2000,  proveedor:"LA ISLA",   unidad:"bidón" },
+  // PROMO
+  { id:10, cat:"PROMO",       nombre:"Promo Pack (Hig + Toalla + Bobina)", precio:40000, proveedor:"ACONQUIJA", unidad:"pack" },
+];
+
+const CAT_ICONS = { PAPEL:"📄", BOLSAS:"🗑️", ACCESORIOS:"🧹", "LÍQUIDOS":"🧴", PROMO:"🎁" };
+let cantidades = {};
+let currentStep = 1;
+
+// ════════════════════════════════════════════
+//  RENDER PRODUCTOS
+// ════════════════════════════════════════════
+function renderProductos() {
+  const cats = [...new Set(PRODUCTOS.map(p => p.cat))];
+  let html = '';
+  cats.forEach(cat => {
+    const prods = PRODUCTOS.filter(p => p.cat === cat);
+    html += `<div class="cat-header">${CAT_ICONS[cat] || ''} ${cat}</div>`;
+    html += `<div class="section-card" style="padding:12px 16px;margin-bottom:8px;">`;
+    prods.forEach(p => {
+      html += `
+        <div class="prod-row">
+          <div class="prod-info">
+            <div class="prod-name">${p.nombre}</div>
+            <div class="prod-meta" style="color:var(--muted);font-size:.78rem;">por ${p.unidad}</div>
+          </div>
+          <div class="text-end me-2">
+            <div class="prod-price">$${p.precio.toLocaleString('es-AR')}</div>
+            <div style="font-size:.7rem;color:var(--muted);">&nbsp;</div>
+          </div>
+          <div class="qty-stepper">
+            <button class="qty-btn" onclick="changeCant(${p.id}, -1)">−</button>
+            <input class="qty-input" type="number" id="qty-${p.id}" value="${cantidades[p.id]||0}" min="0"
+              onchange="setCant(${p.id}, this.value)" oninput="setCant(${p.id}, this.value)">
+            <button class="qty-btn" onclick="changeCant(${p.id}, 1)">+</button>
+          </div>
+        </div>`;
+    });
+    html += `</div>`;
+  });
+  document.getElementById('productList').innerHTML = html;
+}
+
+function changeCant(id, delta) {
+  const val = Math.max(0, (cantidades[id] || 0) + delta);
+  cantidades[id] = val;
+  const el = document.getElementById('qty-' + id);
+  if (el) el.value = val;
+  updateResumen();
+}
+
+function setCant(id, val) {
+  cantidades[id] = Math.max(0, parseInt(val) || 0);
+  updateResumen();
+}
+
+// ════════════════════════════════════════════
+//  RESUMEN SIDEBAR
+// ════════════════════════════════════════════
+function updateResumen() {
+  const items = PRODUCTOS.filter(p => (cantidades[p.id] || 0) > 0);
+  const total = items.reduce((s, p) => s + p.precio * (cantidades[p.id] || 0), 0);
+  const sb = document.getElementById('sidebarResumen');
+  const st = document.getElementById('sidebarTotal');
+
+  if (!items.length) {
+    sb.innerHTML = `<div class="resumen-empty"><i class="bi bi-box text-muted d-block mb-2" style="font-size:2rem;"></i>Todavía no agregaste productos</div>`;
+    st.style.display = 'none';
+  } else {
+    sb.innerHTML = items.map(p => `
+      <div class="resumen-item">
+        <span>${cantidades[p.id]}× ${p.nombre}</span>
+        <span class="fw-semibold text-nowrap">$${(p.precio * cantidades[p.id]).toLocaleString('es-AR')}</span>
+      </div>`).join('');
+    st.style.display = 'block';
+    document.getElementById('sidebarTotalMonto').textContent = '$' + total.toLocaleString('es-AR');
+  }
+
+  // Actualizar alerta plazo en step 3
+  updatePlazoInfo();
+}
+
+// ════════════════════════════════════════════
+//  PLAZO MÍNIMO
+// ════════════════════════════════════════════
+function getMinDias() {
+  const tieneAconquija = PRODUCTOS.some(p => (cantidades[p.id]||0) > 0 && p.proveedor === 'ACONQUIJA');
+  return tieneAconquija ? CONFIG.minDiasAconquija : CONFIG.minDiasIsla;
+}
+
+function getMinFecha() {
+  const hoy = new Date();
+  let dias = getMinDias();
+  let fecha = new Date(hoy);
+  let agregados = 0;
+  while (agregados < dias) {
+    fecha.setDate(fecha.getDate() + 1);
+    const dow = fecha.getDay();
+    if (dow !== 0 && dow !== 6) agregados++; // saltar fines de semana
+  }
+  return fecha;
+}
+
+function updatePlazoInfo() {
+  const el = document.getElementById('plazoInfo');
+  if (!el) return;
+  const items = PRODUCTOS.filter(p => (cantidades[p.id]||0) > 0);
+  if (!items.length) { el.style.display = 'none'; return; }
+
+  const tieneAconquija = items.some(p => p.proveedor === 'ACONQUIJA');
+  const dias = getMinDias();
+  const minFecha = getMinFecha();
+  const minStr = minFecha.toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long' });
+
+  el.style.display = 'flex';
+  if (tieneAconquija) {
+    el.className = 'plazo-alert warn';
+    el.innerHTML = `<i class="bi bi-clock-history"></i><div>Tu pedido incluye productos de <strong>Tucumán (Aconquija)</strong>. La fecha más temprana de entrega disponible es <strong>${minStr}</strong>.</div>`;
+  } else {
+    el.className = 'plazo-alert ok';
+    el.innerHTML = `<i class="bi bi-check-circle"></i><div>Todos tus productos son de stock local. Podemos entregarte a partir del <strong>${minStr}</strong>.</div>`;
+  }
+
+  // Set min date on input
+  const fechaInput = document.getElementById('fechaEntrega');
+  if (fechaInput) {
+    fechaInput.min = minFecha.toISOString().split('T')[0];
+  }
+}
+
+function checkFecha() {
+  const fechaInput = document.getElementById('fechaEntrega');
+  const alertEl = document.getElementById('fechaAlert');
+  if (!fechaInput.value) return;
+  const sel = new Date(fechaInput.value + 'T12:00:00');
+  const min = getMinFecha();
+  if (sel < min) {
+    alertEl.innerHTML = `<span style="color:var(--danger);"><i class="bi bi-exclamation-triangle me-1"></i>Esa fecha no nos da tiempo suficiente. Mínimo: ${min.toLocaleDateString('es-AR', {day:'numeric',month:'long'})}.</span>`;
+  } else {
+    const dow = sel.getDay();
+    if (dow === 0 || dow === 6) {
+      alertEl.innerHTML = `<span style="color:var(--warning);"><i class="bi bi-info-circle me-1"></i>Esa fecha es fin de semana. Te contactaremos para reagendar.</span>`;
+    } else {
+      alertEl.innerHTML = `<span style="color:var(--success);"><i class="bi bi-check-circle me-1"></i>Fecha disponible ✓</span>`;
+    }
+  }
+}
+
+// ════════════════════════════════════════════
+//  NAVEGACIÓN STEPS
+// ════════════════════════════════════════════
+function goToStep(n) {
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById('stepContent' + i).style.display = i === n ? '' : 'none';
+    const ind = document.getElementById('step-ind-' + i);
+    ind.className = 'step-item ' + (i < n ? 'done' : i === n ? 'active' : '');
+    const circ = document.getElementById('step-circ-' + i);
+    circ.innerHTML = i < n ? '<i class="bi bi-check"></i>' : i;
+    if (i < 4) {
+      document.getElementById('conn-' + i).className = 'step-connector' + (i < n ? ' done' : '');
+    }
+  }
+  currentStep = n;
+  if (n === 2) renderProductos();
+  if (n === 3) updatePlazoInfo();
+  if (n === 4) renderResumenFinal();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function nextStep(from) {
+  if (from === 1) {
+    if (!document.getElementById('clienteNombre').value.trim()) {
+      alert('Por favor ingresá tu nombre o razón social.'); return;
+    }
+    if (!document.getElementById('clienteTel').value.trim()) {
+      alert('Por favor ingresá tu número de teléfono.'); return;
+    }
+    if (!document.getElementById('clienteDireccion').value.trim()) {
+      alert('Por favor ingresá la dirección de entrega.'); return;
+    }
+  }
+  if (from === 2) {
+    const items = PRODUCTOS.filter(p => (cantidades[p.id]||0) > 0);
+    if (!items.length) { alert('Agregá al menos un producto al pedido.'); return; }
+  }
+  if (from === 3) {
+    const fecha = document.getElementById('fechaEntrega').value;
+    if (!fecha) { alert('Por favor elegí una fecha de entrega.'); return; }
+    const sel = new Date(fecha + 'T12:00:00');
+    const min = getMinFecha();
+    if (sel < min) { alert('La fecha seleccionada es anterior al plazo mínimo de entrega.'); return; }
+  }
+  goToStep(from + 1);
+}
+
+// ════════════════════════════════════════════
+//  RESUMEN FINAL
+// ════════════════════════════════════════════
+function renderResumenFinal() {
+  const items = PRODUCTOS.filter(p => (cantidades[p.id]||0) > 0);
+  const total = items.reduce((s, p) => s + p.precio * cantidades[p.id], 0);
+  const fecha = document.getElementById('fechaEntrega').value;
+  const fechaStr = fecha ? new Date(fecha + 'T12:00:00').toLocaleDateString('es-AR', {weekday:'long',day:'numeric',month:'long',year:'numeric'}) : '-';
+  const horario = document.getElementById('horarioEntrega').value;
+  const notas = document.getElementById('notas').value;
+
+  let html = `
+    <div class="row g-2 mb-3">
+      <div class="col-sm-6">
+        <div style="background:#f8fafc;border-radius:8px;padding:12px;">
+          <div style="font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;">Cliente</div>
+          <div class="fw-semibold">${document.getElementById('clienteNombre').value}</div>
+          <div style="font-size:.82rem;color:var(--muted);">${document.getElementById('clienteTel').value}</div>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div style="background:#f8fafc;border-radius:8px;padding:12px;">
+          <div style="font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;">Entrega</div>
+          <div class="fw-semibold">${fechaStr}</div>
+          <div style="font-size:.82rem;color:var(--muted);">${horario} · ${document.getElementById('clienteDireccion').value}</div>
+        </div>
+      </div>
+    </div>
+    <table class="table table-sm" style="font-size:.88rem;">
+      <thead><tr><th>Producto</th><th class="text-center">Cant.</th><th class="text-end">Subtotal</th></tr></thead>
+      <tbody>`;
+  items.forEach(p => {
+    html += `<tr>
+      <td>${p.nombre}</td>
+      <td class="text-center">${cantidades[p.id]}</td>
+      <td class="text-end fw-semibold">$${(p.precio*cantidades[p.id]).toLocaleString('es-AR')}</td>
+    </tr>`;
+  });
+  html += `</tbody>
+    <tfoot><tr><td colspan="2" class="fw-bold text-end">TOTAL</td><td class="text-end fw-bold text-primary" style="font-size:1rem;">$${total.toLocaleString('es-AR')}</td></tr></tfoot>
+    </table>`;
+  if (notas) html += `<div style="font-size:.82rem;color:var(--muted);"><strong>Notas:</strong> ${notas}</div>`;
+
+  document.getElementById('resumenFinal').innerHTML = html;
+}
+
+// ════════════════════════════════════════════
+//  ENVIAR POR WHATSAPP
+// ════════════════════════════════════════════
+function enviarPedido() {
+  const items = PRODUCTOS.filter(p => (cantidades[p.id]||0) > 0);
+  const total = items.reduce((s, p) => s + p.precio * cantidades[p.id], 0);
+  const fecha = document.getElementById('fechaEntrega').value;
+  const fechaStr = fecha ? new Date(fecha + 'T12:00:00').toLocaleDateString('es-AR', {weekday:'long',day:'numeric',month:'long',year:'numeric'}) : '-';
+  const numeroPedido = 'LP-' + Date.now().toString().slice(-6);
+
+  let msg = `🧼 *PEDIDO — LIMPIO Y PERFUMADO*\n`;
+  msg += `━━━━━━━━━━━━━━━━━━━\n`;
+  msg += `📋 *N° Pedido:* ${numeroPedido}\n`;
+  msg += `👤 *Cliente:* ${document.getElementById('clienteNombre').value}\n`;
+  msg += `📞 *Tel:* ${document.getElementById('clienteTel').value}\n`;
+  msg += `📍 *Dirección:* ${document.getElementById('clienteDireccion').value}\n`;
+  msg += `📅 *Entrega deseada:* ${fechaStr}\n`;
+  msg += `⏰ *Horario:* ${document.getElementById('horarioEntrega').value}\n`;
+  const notas = document.getElementById('notas').value;
+  if (notas) msg += `📝 *Notas:* ${notas}\n`;
+  msg += `━━━━━━━━━━━━━━━━━━━\n`;
+  msg += `📦 *PRODUCTOS:*\n`;
+  items.forEach(p => {
+    msg += `• ${cantidades[p.id]}x ${p.nombre} — $${(p.precio*cantidades[p.id]).toLocaleString('es-AR')}\n`;
+  });
+  msg += `━━━━━━━━━━━━━━━━━━━\n`;
+  msg += `💰 *TOTAL ESTIMADO: $${total.toLocaleString('es-AR')}*\n`;
+  msg += `_Los precios pueden variar según condiciones de pago._`;
+
+  // Guardar en localStorage para admin
+  const pedido = {
+    id: numeroPedido,
+    fecha: new Date().toISOString(),
+    cliente: document.getElementById('clienteNombre').value,
+    tel: document.getElementById('clienteTel').value,
+    direccion: document.getElementById('clienteDireccion').value,
+    fechaEntrega: fecha,
+    horario: document.getElementById('horarioEntrega').value,
+    notas: notas,
+    items: items.map(p => ({ id:p.id, nombre:p.nombre, cant:cantidades[p.id], precio:p.precio, proveedor:p.proveedor })),
+    total: total,
+    estado: 'pendiente'
+  };
+  const pedidos = JSON.parse(localStorage.getItem('lp_pedidos') || '[]');
+  pedidos.push(pedido);
+  localStorage.setItem('lp_pedidos', JSON.stringify(pedidos));
+
+  const url = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+
+  // Mostrar confirmación
+  document.getElementById('clientView').style.display = 'none';
+  document.getElementById('confirmView').style.display = 'block';
+  document.getElementById('numeroPedido').textContent = numeroPedido;
+}
+
+function nuevoPedido() {
+  cantidades = {};
+  currentStep = 1;
+  document.getElementById('clienteNombre').value = '';
+  document.getElementById('clienteTel').value = '';
+  document.getElementById('clienteDireccion').value = '';
+  document.getElementById('fechaEntrega').value = '';
+  document.getElementById('notas').value = '';
+  document.getElementById('confirmView').style.display = 'none';
+  document.getElementById('clientView').style.display = 'block';
+  goToStep(1);
+  updateResumen();
+}
+
+// ════════════════════════════════════════════
+//  ADMIN VIEW
+// ════════════════════════════════════════════
+let adminPassword = 'lp2026';
+let adminUnlocked = false;
+
+function toggleAdmin() {
+  const av = document.getElementById('adminView');
+  const cv = document.getElementById('clientView');
+  if (av.style.display === 'none' || !av.style.display) {
+    if (!adminUnlocked) {
+      const pass = prompt('Clave de acceso:');
+      if (pass !== adminPassword) { alert('Clave incorrecta.'); return; }
+      adminUnlocked = true;
+    }
+    av.style.display = 'block';
+    cv.style.display = 'none';
+    renderAdmin();
+  } else {
+    av.style.display = 'none';
+    cv.style.display = 'block';
+  }
+}
+
+function renderAdmin() {
+  const pedidos = JSON.parse(localStorage.getItem('lp_pedidos') || '[]');
+  const metricsEl = document.getElementById('adminMetrics');
+  const listEl = document.getElementById('adminPedidosList');
+
+  // Métricas
+  const pendientes = pedidos.filter(p => p.estado === 'pendiente').length;
+  const totalPedidos = pedidos.length;
+  const totalMonto = pedidos.filter(p => p.estado === 'pendiente').reduce((s, p) => s + p.total, 0);
+  const hoy = new Date().toISOString().split('T')[0];
+  const proximos7 = pedidos.filter(p => p.estado === 'pendiente' && p.fechaEntrega && p.fechaEntrega >= hoy).length;
+
+  metricsEl.innerHTML = `
+    <div class="col-6 col-md-3"><div class="section-card text-center"><div style="font-size:1.8rem;font-weight:800;color:var(--primary);">${pendientes}</div><div style="font-size:.75rem;color:var(--muted);">PEDIDOS PENDIENTES</div></div></div>
+    <div class="col-6 col-md-3"><div class="section-card text-center"><div style="font-size:1.8rem;font-weight:800;color:var(--success);">$${totalMonto.toLocaleString('es-AR')}</div><div style="font-size:.75rem;color:var(--muted);">MONTO PENDIENTE</div></div></div>
+    <div class="col-6 col-md-3"><div class="section-card text-center"><div style="font-size:1.8rem;font-weight:800;color:var(--warning);">${proximos7}</div><div style="font-size:.75rem;color:var(--muted);">ENTREGA EN 7 DÍAS</div></div></div>
+    <div class="col-6 col-md-3"><div class="section-card text-center"><div style="font-size:1.8rem;font-weight:800;color:var(--muted);">${totalPedidos}</div><div style="font-size:.75rem;color:var(--muted);">TOTAL RECIBIDOS</div></div></div>`;
+
+  if (!pedidos.length) {
+    listEl.innerHTML = `<div class="text-center text-muted py-4"><i class="bi bi-inbox d-block mb-2" style="font-size:2rem;"></i>No hay pedidos registrados todavía.</div>`;
+    document.getElementById('stockNecesario').style.display = 'none';
+    return;
+  }
+
+  // Stock necesario agregado
+  const stockReq = {};
+  pedidos.filter(p => p.estado === 'pendiente').forEach(p => {
+    p.items.forEach(it => {
+      if (!stockReq[it.id]) stockReq[it.id] = { nombre: it.nombre, proveedor: it.proveedor, total: 0 };
+      stockReq[it.id].total += it.cant;
+    });
+  });
+
+  if (Object.keys(stockReq).length) {
+    document.getElementById('stockNecesario').style.display = 'block';
+    document.getElementById('stockNecesarioContent').innerHTML = Object.values(stockReq).sort((a,b)=>b.total-a.total).map(s => `
+      <div class="d-flex align-items-center gap-2 mb-2 p-2" style="background:#f8fafc;border-radius:8px;">
+        <span class="prod-badge ${s.proveedor==='ACONQUIJA'?'badge-aconquija':'badge-isla'}">${s.proveedor}</span>
+        <span style="flex:1;font-size:.88rem;">${s.nombre}</span>
+        <span class="fw-bold">${s.total} u.</span>
+      </div>`).join('');
+  }
+
+  // Lista pedidos ordenada por fecha entrega
+  const sorted = [...pedidos].sort((a,b) => (a.fechaEntrega||'') > (b.fechaEntrega||'') ? 1 : -1);
+  const ahora = new Date();
+  listEl.innerHTML = sorted.map(p => {
+    const fEnt = p.fechaEntrega ? new Date(p.fechaEntrega + 'T12:00:00') : null;
+    const diasFaltan = fEnt ? Math.ceil((fEnt - ahora) / 86400000) : 999;
+    const urgClass = diasFaltan <= 1 ? 'urgente' : diasFaltan <= 3 ? 'proximo' : 'ok';
+    const urgLabel = diasFaltan <= 1 ? '🔴 HOY/MAÑANA' : diasFaltan <= 3 ? '🟡 Próximo' : '🟢 Con tiempo';
+    const fechaEntStr = fEnt ? fEnt.toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'}) : 'Sin fecha';
+    const tieneAconquija = p.items.some(i => i.proveedor === 'ACONQUIJA');
+    return `
+    <div class="order-card ${urgClass}">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+          <div class="fw-bold">${p.cliente} <span style="font-size:.72rem;color:var(--muted);">#${p.id}</span></div>
+          <div style="font-size:.8rem;color:var(--muted);">${p.tel} · ${p.direccion}</div>
+        </div>
+        <div class="text-end">
+          <div class="fw-bold text-primary">$${p.total.toLocaleString('es-AR')}</div>
+          <div style="font-size:.72rem;">${urgLabel}</div>
+        </div>
+      </div>
+      <div class="mt-2 d-flex gap-2 flex-wrap align-items-center">
+        <span style="font-size:.8rem;"><i class="bi bi-calendar me-1"></i><strong>${fechaEntStr}</strong> · ${p.horario}</span>
+        ${tieneAconquija ? '<span class="prod-badge badge-aconquija">Incluye Aconquija</span>' : '<span class="prod-badge badge-isla">Solo local</span>'}
+      </div>
+      <div class="mt-2" style="font-size:.8rem;color:var(--muted);">
+        ${p.items.map(it => `${it.cant}× ${it.nombre}`).join(' · ')}
+      </div>
+      ${p.notas ? `<div class="mt-1" style="font-size:.78rem;color:var(--muted);font-style:italic;">"${p.notas}"</div>` : ''}
+      <div class="mt-2 d-flex gap-2">
+        <button class="btn btn-success btn-sm" onclick="marcarEntregado('${p.id}')"><i class="bi bi-check2 me-1"></i>Entregado</button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="contactarCliente('${p.tel}')"><i class="bi bi-whatsapp me-1"></i>Contactar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function marcarEntregado(id) {
+  const pedidos = JSON.parse(localStorage.getItem('lp_pedidos') || '[]');
+  const p = pedidos.find(x => x.id === id);
+  if (p) { p.estado = 'entregado'; localStorage.setItem('lp_pedidos', JSON.stringify(pedidos)); renderAdmin(); }
+}
+
+function contactarCliente(tel) {
+  const num = tel.replace(/\D/g,'');
+  window.open(`https://wa.me/549${num}`, '_blank');
+}
+
+function limpiarPedidos() {
+  if (confirm('¿Eliminar todos los pedidos del historial local?')) {
+    localStorage.removeItem('lp_pedidos'); renderAdmin();
+  }
+}
+
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
+updateResumen();
+</script>
+</body>
+</html>

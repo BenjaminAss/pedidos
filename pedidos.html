@@ -636,9 +636,10 @@
     </div>
 
     <!-- Tab Nav -->
-    <div style="display:flex;gap:8px;margin-bottom:16px;" id="adminTabs">
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;" id="adminTabs">
       <button class="btn btn-sm" style="background:var(--blue-600);color:#fff;" onclick="showAdminTab('pedidos')" id="tabPedidos"><i class="bi bi-inbox"></i> Pedidos</button>
-      <button class="btn btn-outline btn-sm" onclick="showAdminTab('precios')" id="tabPrecios"><i class="bi bi-tags"></i> Editar Precios</button>
+      <button class="btn btn-outline btn-sm" onclick="showAdminTab('precios')" id="tabPrecios"><i class="bi bi-tags"></i> Precios y Stock</button>
+      <button class="btn btn-outline btn-sm" onclick="showAdminTab('productos')" id="tabProductos"><i class="bi bi-box-seam"></i> Productos</button>
     </div>
 
     <!-- Pedidos Tab -->
@@ -654,17 +655,73 @@
     <!-- Precios Tab -->
     <div id="adminPreciosTab" style="display:none;">
       <div class="card" style="margin-bottom:16px;">
-        <div class="card-header"><div class="card-header-icon blue"><i class="bi bi-tags"></i></div><div class="card-title">Editar precios</div></div>
+        <div class="card-header"><div class="card-header-icon blue"><i class="bi bi-tags"></i></div><div class="card-title">Editar precios y stock</div></div>
         <div class="card-body">
           <p style="font-size:.8rem;color:var(--gray-500);margin-bottom:16px;">Modificá los precios de los productos. Los cambios se guardan localmente en este dispositivo.</p>
           <div id="priceEditorList"></div>
-          <div style="display:flex;gap:8px;margin-top:16px;">
+          <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
             <button class="btn btn-primary" onclick="guardarPrecios()"><i class="bi bi-check-lg"></i> Guardar precios</button>
             <button class="btn btn-outline" onclick="resetPrecios()"><i class="bi bi-arrow-counterclockwise"></i> Restaurar originales</button>
           </div>
           <div id="preciosSaved" style="display:none;margin-top:12px;padding:10px;background:var(--green-50);border-radius:8px;border:1px solid #bbf7d0;color:#166534;font-size:.82rem;font-weight:600;text-align:center;">
             <i class="bi bi-check-circle-fill"></i> Precios actualizados correctamente
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Productos Tab -->
+    <div id="adminProductosTab" style="display:none;">
+      <!-- Agregar producto -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><div class="card-header-icon green"><i class="bi bi-plus-circle-fill"></i></div><div class="card-title">Agregar producto</div></div>
+        <div class="card-body">
+          <div class="form-row" style="margin-bottom:12px;">
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">Nombre *</label>
+              <input class="form-input" type="text" id="newProdNombre" placeholder="Ej: Jabón Líquido 5L">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">Categoría *</label>
+              <select class="form-select" id="newProdCat">
+                <option value="PAPEL">Papel</option>
+                <option value="BOLSAS">Bolsas</option>
+                <option value="ACCESORIOS">Accesorios</option>
+                <option value="LÍQUIDOS">Líquidos</option>
+                <option value="PROMO">Promo</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row" style="margin-bottom:12px;">
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">Precio *</label>
+              <input class="form-input" type="number" id="newProdPrecio" placeholder="Ej: 5000" min="0">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">Unidad</label>
+              <select class="form-select" id="newProdUnidad">
+                <option value="unidad">Unidad</option>
+                <option value="caja">Caja</option>
+                <option value="pack">Pack</option>
+                <option value="bolsón">Bolsón</option>
+                <option value="bidón">Bidón</option>
+                <option value="par">Par</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="agregarProducto()"><i class="bi bi-plus-lg"></i> Agregar producto</button>
+          <div id="prodAddedMsg" style="display:none;margin-top:12px;padding:10px;background:var(--green-50);border-radius:8px;border:1px solid #bbf7d0;color:#166534;font-size:.82rem;font-weight:600;text-align:center;">
+            <i class="bi bi-check-circle-fill"></i> Producto agregado correctamente
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de productos para eliminar -->
+      <div class="card">
+        <div class="card-header"><div class="card-header-icon orange"><i class="bi bi-list-ul"></i></div><div class="card-title">Productos activos</div></div>
+        <div class="card-body">
+          <p style="font-size:.8rem;color:var(--gray-500);margin-bottom:16px;">Podés eliminar productos que ya no vendés. Los productos base se pueden restaurar con "Restaurar originales".</p>
+          <div id="prodManagerList"></div>
         </div>
       </div>
     </div>
@@ -698,10 +755,18 @@ const PRODUCTOS_BASE = [
   { id:10, cat:"PROMO",       nombre:"Promo Pack (Hig + Toalla + Bobina)", precio:40000, unidad:"pack",   img:"img/promo-negocio.png" },
 ];
 
-// Load custom prices from localStorage (operator can update)
+// Load products: base + custom added - deleted, with custom prices
 function loadProductos() {
   const custom = JSON.parse(localStorage.getItem('lp_precios')||'{}');
-  return PRODUCTOS_BASE.map(p => ({...p, precio: custom[p.id] !== undefined ? custom[p.id] : p.precio}));
+  const added = JSON.parse(localStorage.getItem('lp_productos_custom')||'[]');
+  const deleted = JSON.parse(localStorage.getItem('lp_productos_deleted')||'[]');
+  const all = [...PRODUCTOS_BASE, ...added].filter(p => !deleted.includes(p.id));
+  return all.map(p => ({...p, precio: custom[p.id] !== undefined ? custom[p.id] : p.precio}));
+}
+function getAllProductosBase() {
+  const added = JSON.parse(localStorage.getItem('lp_productos_custom')||'[]');
+  const deleted = JSON.parse(localStorage.getItem('lp_productos_deleted')||'[]');
+  return [...PRODUCTOS_BASE, ...added].filter(p => !deleted.includes(p.id));
 }
 let PRODUCTOS = loadProductos();
 
@@ -991,15 +1056,18 @@ function toggleAdmin() {
 }
 
 function showAdminTab(tab) {
-  document.getElementById('adminPedidosTab').style.display = tab==='pedidos'?'':'none';
-  document.getElementById('adminPreciosTab').style.display = tab==='precios'?'':'none';
-  document.getElementById('tabPedidos').className = tab==='pedidos'?'btn btn-sm':'btn btn-outline btn-sm';
-  document.getElementById('tabPedidos').style.background = tab==='pedidos'?'var(--blue-600)':'';
-  document.getElementById('tabPedidos').style.color = tab==='pedidos'?'#fff':'';
-  document.getElementById('tabPrecios').className = tab==='precios'?'btn btn-sm':'btn btn-outline btn-sm';
-  document.getElementById('tabPrecios').style.background = tab==='precios'?'var(--blue-600)':'';
-  document.getElementById('tabPrecios').style.color = tab==='precios'?'#fff':'';
+  const tabs = ['pedidos','precios','productos'];
+  const tabIds = { pedidos:'adminPedidosTab', precios:'adminPreciosTab', productos:'adminProductosTab' };
+  const btnIds = { pedidos:'tabPedidos', precios:'tabPrecios', productos:'tabProductos' };
+  tabs.forEach(t => {
+    document.getElementById(tabIds[t]).style.display = t===tab?'':'none';
+    const btn = document.getElementById(btnIds[t]);
+    btn.className = t===tab?'btn btn-sm':'btn btn-outline btn-sm';
+    btn.style.background = t===tab?'var(--blue-600)':'';
+    btn.style.color = t===tab?'#fff':'';
+  });
   if (tab==='precios') renderPriceEditor();
+  if (tab==='productos') renderProdManager();
 }
 
 function showPriceEditor() { showAdminTab('precios'); }
@@ -1007,11 +1075,12 @@ function showPriceEditor() { showAdminTab('precios'); }
 function renderPriceEditor() {
   const custom = JSON.parse(localStorage.getItem('lp_precios')||'{}');
   const sinStock = JSON.parse(localStorage.getItem('lp_sinstock')||'[]');
-  const cats = [...new Set(PRODUCTOS_BASE.map(p=>p.cat))];
+  const allProds = getAllProductosBase();
+  const cats = [...new Set(allProds.map(p=>p.cat))];
   document.getElementById('priceEditorList').innerHTML = cats.map(cat => `
     <div style="margin-bottom:16px;">
       <div style="font-size:.78rem;font-weight:700;color:var(--blue-600);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">${cat}</div>
-      ${PRODUCTOS_BASE.filter(p=>p.cat===cat).map(p => {
+      ${allProds.filter(p=>p.cat===cat).map(p => {
         const noStock = sinStock.includes(p.id);
         return `
         <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-100);${noStock?'opacity:.5;':''}">
@@ -1048,7 +1117,8 @@ function toggleStockItem(id) {
 
 function guardarPrecios() {
   const custom = {};
-  PRODUCTOS_BASE.forEach(p => {
+  const allProds = getAllProductosBase();
+  allProds.forEach(p => {
     const el = document.getElementById('price_'+p.id);
     if (el) { const v = parseInt(el.value)||0; if (v !== p.precio) custom[p.id] = v; }
   });
@@ -1060,14 +1130,103 @@ function guardarPrecios() {
 }
 
 function resetPrecios() {
-  if (!confirm('¿Restaurar todos los precios y stock a los valores originales?')) return;
+  if (!confirm('¿Restaurar todos los precios, stock y productos a los valores originales?')) return;
   localStorage.removeItem('lp_precios');
   localStorage.removeItem('lp_sinstock');
+  localStorage.removeItem('lp_productos_custom');
+  localStorage.removeItem('lp_productos_deleted');
   PRODUCTOS = loadProductos();
   renderPriceEditor();
   const saved = document.getElementById('preciosSaved');
   saved.style.display = 'block';
   setTimeout(()=>{ saved.style.display='none'; }, 3000);
+}
+
+// ── PRODUCT MANAGEMENT ──
+function agregarProducto() {
+  const nombre = document.getElementById('newProdNombre').value.trim();
+  const cat = document.getElementById('newProdCat').value;
+  const precio = parseInt(document.getElementById('newProdPrecio').value)||0;
+  const unidad = document.getElementById('newProdUnidad').value;
+
+  if (!nombre) { alert('Ingresá el nombre del producto.'); return; }
+  if (precio <= 0) { alert('Ingresá un precio válido.'); return; }
+
+  const added = JSON.parse(localStorage.getItem('lp_productos_custom')||'[]');
+  const allProds = getAllProductosBase();
+  const maxId = Math.max(...allProds.map(p=>p.id), ...added.map(p=>p.id), 100);
+  const newProd = { id: maxId + 1, cat, nombre, precio, unidad, custom: true };
+  added.push(newProd);
+  localStorage.setItem('lp_productos_custom', JSON.stringify(added));
+  PRODUCTOS = loadProductos();
+
+  // Clear form
+  document.getElementById('newProdNombre').value = '';
+  document.getElementById('newProdPrecio').value = '';
+
+  // Show success
+  const msg = document.getElementById('prodAddedMsg');
+  msg.style.display = 'block';
+  setTimeout(()=>{ msg.style.display='none'; }, 3000);
+  renderProdManager();
+}
+
+function eliminarProducto(id) {
+  const prod = getAllProductosBase().find(p => p.id === id);
+  if (!prod) return;
+  if (!confirm(`¿Eliminar "${prod.nombre}" del catálogo?`)) return;
+
+  // Check if it's a custom-added product
+  const added = JSON.parse(localStorage.getItem('lp_productos_custom')||'[]');
+  const isCustom = added.some(p => p.id === id);
+
+  if (isCustom) {
+    // Remove from custom list directly
+    localStorage.setItem('lp_productos_custom', JSON.stringify(added.filter(p => p.id !== id)));
+  } else {
+    // Add to deleted list
+    const deleted = JSON.parse(localStorage.getItem('lp_productos_deleted')||'[]');
+    if (!deleted.includes(id)) { deleted.push(id); localStorage.setItem('lp_productos_deleted', JSON.stringify(deleted)); }
+  }
+
+  // Clean up related data
+  const custom = JSON.parse(localStorage.getItem('lp_precios')||'{}');
+  delete custom[id];
+  localStorage.setItem('lp_precios', JSON.stringify(custom));
+  let sinStock = JSON.parse(localStorage.getItem('lp_sinstock')||'[]');
+  sinStock = sinStock.filter(x => x !== id);
+  localStorage.setItem('lp_sinstock', JSON.stringify(sinStock));
+  cant[id] = 0;
+
+  PRODUCTOS = loadProductos();
+  renderProdManager();
+}
+
+function renderProdManager() {
+  const allProds = getAllProductosBase();
+  const added = JSON.parse(localStorage.getItem('lp_productos_custom')||'[]');
+  const addedIds = added.map(p=>p.id);
+  const cats = [...new Set(allProds.map(p=>p.cat))];
+
+  document.getElementById('prodManagerList').innerHTML = cats.map(cat => `
+    <div style="margin-bottom:16px;">
+      <div style="font-size:.78rem;font-weight:700;color:var(--blue-600);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">${cat} <span style="color:var(--gray-400);font-weight:500;">(${allProds.filter(p=>p.cat===cat).length})</span></div>
+      ${allProds.filter(p=>p.cat===cat).map(p => `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-100);">
+          ${p.img ? `<img src="${p.img}" style="width:36px;height:36px;border-radius:8px;object-fit:cover;border:1px solid var(--gray-200);" onerror="this.style.display='none'">` : `<div style="width:36px;height:36px;border-radius:8px;background:var(--blue-50);display:flex;align-items:center;justify-content:center;font-size:.9rem;">${CAT_EMOJI[p.cat]||'📦'}</div>`}
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:.85rem;font-weight:600;color:var(--gray-800);display:flex;align-items:center;gap:6px;">
+              ${p.nombre}
+              ${addedIds.includes(p.id)?'<span style="font-size:.6rem;background:var(--blue-100);color:var(--blue-600);padding:1px 6px;border-radius:4px;font-weight:700;">NUEVO</span>':''}
+            </div>
+            <div style="font-size:.72rem;color:var(--gray-400);">$${fmt(p.precio)} por ${p.unidad}</div>
+          </div>
+          <button onclick="eliminarProducto(${p.id})" style="background:none;border:1.5px solid var(--gray-200);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--red-500);font-size:.82rem;display:flex;align-items:center;gap:4px;transition:all .2s;"
+            onmouseover="this.style.background='#fef2f2';this.style.borderColor='var(--red-500)'" onmouseout="this.style.background='none';this.style.borderColor='var(--gray-200)'">
+            <i class="bi bi-trash"></i> Eliminar
+          </button>
+        </div>`).join('')}
+    </div>`).join('');
 }
 
 function renderAdmin() {

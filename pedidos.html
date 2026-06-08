@@ -167,6 +167,10 @@
       font-size: 1.2rem; background: var(--gray-50); flex-shrink: 0;
     }
     .prod-details { flex: 1; min-width: 0; }
+    .prod-img {
+      width: 56px; height: 56px; border-radius: 10px; object-fit: cover;
+      background: var(--gray-100); flex-shrink: 0; border: 1px solid var(--gray-200);
+    }
     .prod-name { font-size: .85rem; font-weight: 600; color: var(--gray-800); line-height: 1.3; }
     .prod-sub { font-size: .72rem; color: var(--gray-400); margin-top: 1px; display: flex; align-items: center; gap: 6px; }
     .prod-tag {
@@ -365,7 +369,7 @@
       <div class="logo-icon">+</div>
       <div class="logo-text">LIMPIO Y PERFUMADO<span>Artículos de limpieza</span></div>
     </div>
-    <button class="header-btn" onclick="toggleAdmin()"><i class="bi bi-lock-fill"></i> Admin</button>
+    <a href="index.html" class="header-btn" style="text-decoration:none;"><i class="bi bi-house-fill"></i> Inicio</a>
   </div>
 </header>
 
@@ -615,47 +619,83 @@
 <div id="adminView">
   <div class="main">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <div style="font-size:1.05rem;font-weight:800;display:flex;align-items:center;gap:8px;"><i class="bi bi-speedometer2" style="color:var(--blue-600);"></i> Pedidos recibidos</div>
+      <div style="font-size:1.05rem;font-weight:800;display:flex;align-items:center;gap:8px;"><i class="bi bi-speedometer2" style="color:var(--blue-600);"></i> Panel Operativo</div>
       <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline btn-sm" onclick="showPriceEditor()" id="btnPrecios"><i class="bi bi-pencil-square"></i> Precios</button>
         <button class="btn btn-outline btn-sm" style="color:var(--red-500);border-color:var(--red-500);" onclick="limpiarPedidos()"><i class="bi bi-trash"></i></button>
         <button class="btn btn-outline btn-sm" onclick="toggleAdmin()"><i class="bi bi-x-lg"></i></button>
       </div>
     </div>
-    <div class="metric-grid" id="adminMetrics"></div>
-    <div class="card" id="stockCard" style="display:none;margin-bottom:16px;">
-      <div class="card-header"><div class="card-header-icon orange"><i class="bi bi-boxes"></i></div><div class="card-title">Stock requerido</div></div>
-      <div class="card-body" id="stockContent"></div>
+
+    <!-- Tab Nav -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;" id="adminTabs">
+      <button class="btn btn-sm" style="background:var(--blue-600);color:#fff;" onclick="showAdminTab('pedidos')" id="tabPedidos"><i class="bi bi-inbox"></i> Pedidos</button>
+      <button class="btn btn-outline btn-sm" onclick="showAdminTab('precios')" id="tabPrecios"><i class="bi bi-tags"></i> Editar Precios</button>
     </div>
-    <div id="adminList"><div class="cart-empty" style="padding:32px;"><i class="bi bi-inbox"></i><span>No hay pedidos registrados.</span></div></div>
+
+    <!-- Pedidos Tab -->
+    <div id="adminPedidosTab">
+      <div class="metric-grid" id="adminMetrics"></div>
+      <div class="card" id="stockCard" style="display:none;margin-bottom:16px;">
+        <div class="card-header"><div class="card-header-icon orange"><i class="bi bi-boxes"></i></div><div class="card-title">Stock requerido</div></div>
+        <div class="card-body" id="stockContent"></div>
+      </div>
+      <div id="adminList"><div class="cart-empty" style="padding:32px;"><i class="bi bi-inbox"></i><span>No hay pedidos registrados.</span></div></div>
+    </div>
+
+    <!-- Precios Tab -->
+    <div id="adminPreciosTab" style="display:none;">
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header"><div class="card-header-icon blue"><i class="bi bi-tags"></i></div><div class="card-title">Editar precios</div></div>
+        <div class="card-body">
+          <p style="font-size:.8rem;color:var(--gray-500);margin-bottom:16px;">Modificá los precios de los productos. Los cambios se guardan localmente en este dispositivo.</p>
+          <div id="priceEditorList"></div>
+          <div style="display:flex;gap:8px;margin-top:16px;">
+            <button class="btn btn-primary" onclick="guardarPrecios()"><i class="bi bi-check-lg"></i> Guardar precios</button>
+            <button class="btn btn-outline" onclick="resetPrecios()"><i class="bi bi-arrow-counterclockwise"></i> Restaurar originales</button>
+          </div>
+          <div id="preciosSaved" style="display:none;margin-top:12px;padding:10px;background:var(--green-50);border-radius:8px;border:1px solid #bbf7d0;color:#166534;font-size:.82rem;font-weight:600;text-align:center;">
+            <i class="bi bi-check-circle-fill"></i> Precios actualizados correctamente
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
-const PRODUCTOS = [
-  { id:1,  cat:"PAPEL",       nombre:"Caja Toallas Intercaladas Blancas", precio:18000, prov:"ACONQUIJA", unidad:"caja" },
-  { id:2,  cat:"PAPEL",       nombre:"Caja Toallas Intercaladas Beige",   precio:16500, prov:"ACONQUIJA", unidad:"caja" },
-  { id:3,  cat:"PAPEL",       nombre:"Papel Higiénico 300M x 8U",         precio:14500, prov:"ACONQUIJA", unidad:"pack" },
-  { id:4,  cat:"PAPEL",       nombre:"Toalla Rollo 4x200M Blanca Cal A",  precio:16500, prov:"ACONQUIJA", unidad:"unidad" },
-  { id:9,  cat:"PAPEL",       nombre:"Toalla Rollo 4x200M Blanca Cal B",  precio:16500, prov:"ACONQUIJA", unidad:"unidad" },
-  { id:11, cat:"PAPEL",       nombre:"Rollo Servilletas 4x200M Blanca",   precio:16000, prov:"ACONQUIJA", unidad:"unidad" },
-  { id:5,  cat:"PAPEL",       nombre:"Bolsón Papel Higiénico 50m x 24U",  precio:15500, prov:"LA ISLA",   unidad:"bolsón" },
-  { id:6,  cat:"BOLSAS",      nombre:"Bolsa Residuo 45x60x30 (x30 u)",    precio:1500,  prov:"LA ISLA",   unidad:"pack" },
-  { id:7,  cat:"BOLSAS",      nombre:"Bolsa Compact. 60x90 (x10 u)",      precio:2000,  prov:"LA ISLA",   unidad:"pack" },
-  { id:8,  cat:"BOLSAS",      nombre:"Bolsa Compact. 90x110 (x10 u)",     precio:2500,  prov:"LA ISLA",   unidad:"pack" },
-  { id:12, cat:"ACCESORIOS",  nombre:"Rejillas Doble",                     precio:1500,  prov:"LA ISLA",   unidad:"unidad" },
-  { id:13, cat:"ACCESORIOS",  nombre:"Rejillas Banderita",                 precio:3500,  prov:"LA ISLA",   unidad:"unidad" },
-  { id:14, cat:"ACCESORIOS",  nombre:"Paño Multiuso Costero",              precio:1500,  prov:"LA ISLA",   unidad:"unidad" },
-  { id:15, cat:"ACCESORIOS",  nombre:"Trapo Fibran",                       precio:1400,  prov:"LA ISLA",   unidad:"unidad" },
-  { id:17, cat:"ACCESORIOS",  nombre:"Escobillón Gondomax",                precio:6000,  prov:"LA ISLA",   unidad:"unidad" },
-  { id:18, cat:"ACCESORIOS",  nombre:"Secador Negro x 40cm",               precio:5500,  prov:"LA ISLA",   unidad:"unidad" },
-  { id:19, cat:"ACCESORIOS",  nombre:"Secador Negro x 50cm",               precio:6500,  prov:"LA ISLA",   unidad:"unidad" },
-  { id:20, cat:"ACCESORIOS",  nombre:"Guantes Make",                       precio:4500,  prov:"LA ISLA",   unidad:"par" },
-  { id:21, cat:"ACCESORIOS",  nombre:"Esponja",                            precio:1500,  prov:"LA ISLA",   unidad:"unidad" },
-  { id:22, cat:"LÍQUIDOS",    nombre:"Limpiavidrios Concent. ECO (x5 L)", precio:3000,  prov:"LA ISLA",   unidad:"bidón" },
-  { id:23, cat:"LÍQUIDOS",    nombre:"Lavandina Concent. Multimax (x5 L)",precio:2000,  prov:"LA ISLA",   unidad:"bidón" },
-  { id:24, cat:"LÍQUIDOS",    nombre:"Desinfectante Piso Concent. (x5 L)",precio:2000,  prov:"LA ISLA",   unidad:"bidón" },
-  { id:10, cat:"PROMO",       nombre:"Promo Pack (Hig + Toalla + Bobina)", precio:40000, prov:"ACONQUIJA", unidad:"pack" },
+const PRODUCTOS_BASE = [
+  { id:1,  cat:"PAPEL",       nombre:"Caja Toallas Intercaladas Blancas", precio:18000, unidad:"caja",   img:"https://images.unsplash.com/photo-1585814240392-e56ef754ec02?w=120&h=120&fit=crop" },
+  { id:2,  cat:"PAPEL",       nombre:"Caja Toallas Intercaladas Beige",   precio:16500, unidad:"caja",   img:"https://images.unsplash.com/photo-1585814240392-e56ef754ec02?w=120&h=120&fit=crop" },
+  { id:3,  cat:"PAPEL",       nombre:"Papel Higiénico 300M x 8U",         precio:14500, unidad:"pack",   img:"https://images.unsplash.com/photo-1584556812952-905ffd0c611a?w=120&h=120&fit=crop" },
+  { id:4,  cat:"PAPEL",       nombre:"Toalla Rollo 4x200M Blanca Cal A",  precio:16500, unidad:"unidad", img:"https://images.unsplash.com/photo-1585814240392-e56ef754ec02?w=120&h=120&fit=crop" },
+  { id:9,  cat:"PAPEL",       nombre:"Toalla Rollo 4x200M Blanca Cal B",  precio:16500, unidad:"unidad", img:"https://images.unsplash.com/photo-1585814240392-e56ef754ec02?w=120&h=120&fit=crop" },
+  { id:11, cat:"PAPEL",       nombre:"Rollo Servilletas 4x200M Blanca",   precio:16000, unidad:"unidad", img:"https://images.unsplash.com/photo-1585814240392-e56ef754ec02?w=120&h=120&fit=crop" },
+  { id:5,  cat:"PAPEL",       nombre:"Bolsón Papel Higiénico 50m x 24U",  precio:15500, unidad:"bolsón", img:"https://images.unsplash.com/photo-1584556812952-905ffd0c611a?w=120&h=120&fit=crop" },
+  { id:6,  cat:"BOLSAS",      nombre:"Bolsa Residuo 45x60x30 (x30 u)",    precio:1500,  unidad:"pack",   img:"https://images.unsplash.com/photo-1610557892470-55d9e80c0bce?w=120&h=120&fit=crop" },
+  { id:7,  cat:"BOLSAS",      nombre:"Bolsa Compact. 60x90 (x10 u)",      precio:2000,  unidad:"pack",   img:"https://images.unsplash.com/photo-1610557892470-55d9e80c0bce?w=120&h=120&fit=crop" },
+  { id:8,  cat:"BOLSAS",      nombre:"Bolsa Compact. 90x110 (x10 u)",     precio:2500,  unidad:"pack",   img:"https://images.unsplash.com/photo-1610557892470-55d9e80c0bce?w=120&h=120&fit=crop" },
+  { id:12, cat:"ACCESORIOS",  nombre:"Rejillas Doble",                     precio:1500,  unidad:"unidad", img:"https://images.unsplash.com/photo-1563453392212-326f5e854473?w=120&h=120&fit=crop" },
+  { id:13, cat:"ACCESORIOS",  nombre:"Rejillas Banderita",                 precio:3500,  unidad:"unidad", img:"https://images.unsplash.com/photo-1563453392212-326f5e854473?w=120&h=120&fit=crop" },
+  { id:14, cat:"ACCESORIOS",  nombre:"Paño Multiuso Costero",              precio:1500,  unidad:"unidad", img:"https://images.unsplash.com/photo-1563453392212-326f5e854473?w=120&h=120&fit=crop" },
+  { id:15, cat:"ACCESORIOS",  nombre:"Trapo Fibran",                       precio:1400,  unidad:"unidad", img:"https://images.unsplash.com/photo-1563453392212-326f5e854473?w=120&h=120&fit=crop" },
+  { id:17, cat:"ACCESORIOS",  nombre:"Escobillón Gondomax",                precio:6000,  unidad:"unidad", img:"https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=120&h=120&fit=crop" },
+  { id:18, cat:"ACCESORIOS",  nombre:"Secador Negro x 40cm",               precio:5500,  unidad:"unidad", img:"https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=120&h=120&fit=crop" },
+  { id:19, cat:"ACCESORIOS",  nombre:"Secador Negro x 50cm",               precio:6500,  unidad:"unidad", img:"https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=120&h=120&fit=crop" },
+  { id:20, cat:"ACCESORIOS",  nombre:"Guantes Make",                       precio:4500,  unidad:"par",    img:"https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=120&h=120&fit=crop" },
+  { id:21, cat:"ACCESORIOS",  nombre:"Esponja",                            precio:1500,  unidad:"unidad", img:"https://images.unsplash.com/photo-1563453392212-326f5e854473?w=120&h=120&fit=crop" },
+  { id:22, cat:"LÍQUIDOS",    nombre:"Limpiavidrios Concent. ECO (x5 L)",  precio:3000,  unidad:"bidón",  img:"https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?w=120&h=120&fit=crop" },
+  { id:23, cat:"LÍQUIDOS",    nombre:"Lavandina Concent. Multimax (x5 L)", precio:2000,  unidad:"bidón",  img:"https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?w=120&h=120&fit=crop" },
+  { id:24, cat:"LÍQUIDOS",    nombre:"Desinfectante Piso Concent. (x5 L)", precio:2000,  unidad:"bidón",  img:"https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?w=120&h=120&fit=crop" },
+  { id:10, cat:"PROMO",       nombre:"Promo Pack (Hig + Toalla + Bobina)", precio:40000, unidad:"pack",   img:"https://images.unsplash.com/photo-1584556812952-905ffd0c611a?w=120&h=120&fit=crop" },
 ];
+
+// Load custom prices from localStorage (operator can update)
+function loadProductos() {
+  const custom = JSON.parse(localStorage.getItem('lp_precios')||'{}');
+  return PRODUCTOS_BASE.map(p => ({...p, precio: custom[p.id] !== undefined ? custom[p.id] : p.precio}));
+}
+let PRODUCTOS = loadProductos();
 
 const CAT_ICONS = { PAPEL:"bi-file-earmark", BOLSAS:"bi-bag", ACCESORIOS:"bi-tools", "LÍQUIDOS":"bi-droplet-fill", PROMO:"bi-gift-fill" };
 const CAT_EMOJI = { PAPEL:"🧻", BOLSAS:"🗑️", ACCESORIOS:"🧹", "LÍQUIDOS":"🧴", PROMO:"🎁" };
@@ -684,7 +724,8 @@ function renderProds() {
 
   document.getElementById('prodList').innerHTML = prods.length ? prods.map(p => `
     <div class="prod-item">
-      <div class="prod-emoji">${CAT_EMOJI[p.cat]||'📦'}</div>
+      <img class="prod-img" src="${p.img}" alt="${p.nombre}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="prod-emoji" style="display:none;">${CAT_EMOJI[p.cat]||'📦'}</div>
       <div class="prod-details">
         <div class="prod-name">${p.nombre}</div>
         <div class="prod-sub">por ${p.unidad}</div>
@@ -929,11 +970,67 @@ function nuevoPedido() {
 // ── ADMIN ──
 let adminOk = false;
 function toggleAdmin() {
-  const av = document.getElementById('adminView'), cv = document.getElementById('clientView');
+  const av = document.getElementById('adminView'), cv = document.getElementById('clientView'), cfv = document.getElementById('confirmView');
   if (av.style.display==='none'||!av.style.display) {
-    if (!adminOk) { const p=prompt('Clave:'); if(p!=='lp2026'){alert('Clave incorrecta.');return;} adminOk=true; }
-    av.style.display='block'; cv.style.display='none'; renderAdmin();
+    if (!adminOk) { const p=prompt('Clave de acceso operativo:'); if(p!=='lp2026'){alert('Clave incorrecta.');return;} adminOk=true; }
+    av.style.display='block'; cv.style.display='none'; if(cfv) cfv.style.display='none';
+    renderAdmin(); showAdminTab('pedidos');
   } else { av.style.display='none'; cv.style.display='block'; }
+}
+
+function showAdminTab(tab) {
+  document.getElementById('adminPedidosTab').style.display = tab==='pedidos'?'':'none';
+  document.getElementById('adminPreciosTab').style.display = tab==='precios'?'':'none';
+  document.getElementById('tabPedidos').className = tab==='pedidos'?'btn btn-sm':'btn btn-outline btn-sm';
+  document.getElementById('tabPedidos').style.background = tab==='pedidos'?'var(--blue-600)':'';
+  document.getElementById('tabPedidos').style.color = tab==='pedidos'?'#fff':'';
+  document.getElementById('tabPrecios').className = tab==='precios'?'btn btn-sm':'btn btn-outline btn-sm';
+  document.getElementById('tabPrecios').style.background = tab==='precios'?'var(--blue-600)':'';
+  document.getElementById('tabPrecios').style.color = tab==='precios'?'#fff':'';
+  if (tab==='precios') renderPriceEditor();
+}
+
+function showPriceEditor() { showAdminTab('precios'); }
+
+function renderPriceEditor() {
+  const custom = JSON.parse(localStorage.getItem('lp_precios')||'{}');
+  const cats = [...new Set(PRODUCTOS_BASE.map(p=>p.cat))];
+  document.getElementById('priceEditorList').innerHTML = cats.map(cat => `
+    <div style="margin-bottom:16px;">
+      <div style="font-size:.78rem;font-weight:700;color:var(--blue-600);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">${cat}</div>
+      ${PRODUCTOS_BASE.filter(p=>p.cat===cat).map(p => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-100);">
+          <span style="flex:1;font-size:.82rem;font-weight:500;">${p.nombre}</span>
+          <span style="font-size:.7rem;color:var(--gray-400);">Original: $${fmt(p.precio)}</span>
+          <div style="position:relative;display:flex;align-items:center;">
+            <span style="position:absolute;left:10px;font-size:.82rem;color:var(--gray-400);font-weight:600;">$</span>
+            <input type="number" id="price_${p.id}" value="${custom[p.id]!==undefined?custom[p.id]:p.precio}"
+              style="width:100px;padding:6px 10px 6px 22px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:.82rem;font-family:inherit;font-weight:600;outline:none;color:var(--gray-800);"
+              onfocus="this.style.borderColor='var(--blue-500)'" onblur="this.style.borderColor='var(--gray-200)'">
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+function guardarPrecios() {
+  const custom = {};
+  PRODUCTOS_BASE.forEach(p => {
+    const el = document.getElementById('price_'+p.id);
+    if (el) { const v = parseInt(el.value)||0; if (v !== p.precio) custom[p.id] = v; }
+  });
+  localStorage.setItem('lp_precios', JSON.stringify(custom));
+  PRODUCTOS = loadProductos();
+  document.getElementById('preciosSaved').style.display = 'block';
+  setTimeout(()=>{ document.getElementById('preciosSaved').style.display='none'; }, 3000);
+}
+
+function resetPrecios() {
+  if (!confirm('¿Restaurar todos los precios a los valores originales?')) return;
+  localStorage.removeItem('lp_precios');
+  PRODUCTOS = loadProductos();
+  renderPriceEditor();
+  document.getElementById('preciosSaved').style.display = 'block';
+  setTimeout(()=>{ document.getElementById('preciosSaved').style.display='none'; }, 3000);
 }
 
 function renderAdmin() {
@@ -1001,6 +1098,14 @@ function limpiarPedidos() { if(confirm('¿Eliminar todos los pedidos?')){localSt
 
 // ── INIT ──
 updateCart();
+
+// Auto-open admin if URL has ?admin=1
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('admin') === '1') {
+    toggleAdmin();
+  }
+})();
 </script>
 </body>
 </html>

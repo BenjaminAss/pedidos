@@ -224,45 +224,26 @@
     /* ── WAREHOUSE SHOWCASE ── */
     .showcase {
       position: relative; overflow: hidden;
-    }
-    .showcase-img {
-      width: 100%; height: 600px; object-fit: cover;
-      display: block;
+      height: 550px;
+      background: url('img/hero-warehouse.jpg') center/cover no-repeat;
     }
     .showcase-overlay {
       position: absolute; inset: 0;
       background: linear-gradient(180deg,
-        rgba(10,22,40,.3) 0%,
-        rgba(10,22,40,.1) 30%,
-        rgba(10,22,40,.4) 70%,
-        rgba(10,22,40,.85) 100%
+        rgba(10,22,40,.35) 0%,
+        rgba(10,22,40,.15) 40%,
+        rgba(10,22,40,.35) 70%,
+        rgba(10,22,40,.6) 100%
       );
     }
-    .showcase-logo {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -70%);
-      z-index: 2;
-      background: rgba(10,22,40,.7); backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,.1);
-      padding: 20px 40px; border-radius: 16px;
-      display: flex; align-items: center; gap: 14px;
-      box-shadow: 0 8px 40px rgba(0,0,0,.3);
-    }
-    .showcase-logo-icon {
-      width: 44px; height: 44px; border-radius: 12px;
-      background: linear-gradient(135deg, var(--sky-400), var(--blue-500));
-      display: flex; align-items: center; justify-content: center;
-      font-size: 24px; color: #fff; font-weight: 900;
-      box-shadow: 0 4px 15px rgba(14,165,233,.4);
-    }
-    .showcase-logo-text { color: #fff; font-size: 1.1rem; font-weight: 800; line-height: 1.2; letter-spacing: .01em; }
-
     /* Features floating card on showcase */
     .showcase-card {
-      position: absolute; bottom: 0; left: 50%; transform: translate(-50%, 50%);
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
       z-index: 3;
-      background: #fff; border-radius: var(--radius-xl);
-      padding: 40px 48px; text-align: center;
-      box-shadow: 0 20px 60px rgba(0,0,0,.12), 0 1px 3px rgba(0,0,0,.08);
+      background: rgba(255,255,255,.95); backdrop-filter: blur(12px);
+      border-radius: var(--radius-xl);
+      padding: 44px 52px; text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,.2), 0 1px 3px rgba(0,0,0,.08);
       max-width: 620px; width: calc(100% - 40px);
     }
     .showcase-card .section-tag {
@@ -280,7 +261,7 @@
 
     /* ── FEATURES ── */
     .features {
-      padding: 120px 24px 80px; background: var(--gray-50);
+      padding: 80px 24px 80px; background: var(--gray-50);
     }
     .section-inner { max-width: 1100px; margin: 0 auto; }
     .features-grid {
@@ -511,7 +492,7 @@
       .features-grid { grid-template-columns: repeat(2, 1fr); }
       .catalog-grid { grid-template-columns: repeat(2, 1fr); }
       .test-grid { grid-template-columns: 1fr; }
-      .showcase-img { height: 450px; }
+      .showcase { height: 450px; }
       .showcase-card { padding: 28px 32px; }
     }
     @media (max-width: 600px) {
@@ -523,10 +504,7 @@
       .features-grid { grid-template-columns: 1fr; }
       .catalog-grid { grid-template-columns: 1fr; }
       .features { padding: 90px 20px 60px; }
-      .showcase-img { height: 350px; }
-      .showcase-logo { padding: 14px 24px; gap: 10px; }
-      .showcase-logo-icon { width: 36px; height: 36px; font-size: 18px; }
-      .showcase-logo-text { font-size: .9rem; }
+      .showcase { height: 380px; }
       .showcase-card { padding: 24px 20px; }
       .showcase-card h2 { font-size: 1.3rem; }
       .footer-top { justify-content: center; text-align: center; }
@@ -577,12 +555,7 @@
 
 <!-- WAREHOUSE SHOWCASE -->
 <section class="showcase">
-  <img src="img/hero-warehouse.jpg" alt="Almacén Limpio y Perfumado" class="showcase-img" loading="lazy">
   <div class="showcase-overlay"></div>
-  <div class="showcase-logo">
-    <div class="showcase-logo-icon">+</div>
-    <div class="showcase-logo-text">LIMPIO Y<br>PERFUMADO</div>
-  </div>
   <div class="showcase-card fade-up">
     <div class="section-tag"><i class="bi bi-stars"></i> ¿Por qué elegirnos?</div>
     <h2>Todo lo que necesitás, en un solo lugar</h2>
